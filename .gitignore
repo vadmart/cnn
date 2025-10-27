@@ -1,0 +1,4 @@
+venv-metal
+*.zip
+.DS_Store
+.idea/
