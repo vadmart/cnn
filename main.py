@@ -1,49 +1,9 @@
-import os
-import random
-
-import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
-import matplotlib.image as mpimg
+import numpy as np
 
-import tensorflow as tf
-from tensorflow.keras.preprocessing import image_dataset_from_directory
-
-# for dirpath, dirnames, filenames in os.walk("./dataset"):
-#     print(f"There are {len(dirnames)} directories and {len(filenames)} images in '{dirpath}'.")
-
-base_dir = './dataset'
-train_dir = os.path.join(base_dir, 'seg_train', 'seg_train')
-test_dir = os.path.join(base_dir, 'seg_test', 'seg_test')
-
-# Training Directory Path
-train_mountain_dir = os.path.join(train_dir, 'mountain')
-train_street_dir = os.path.join(train_dir, 'street')
-train_buildings_dir = os.path.join(train_dir, 'buildings')
-train_sea_dir = os.path.join(train_dir, 'sea')
-train_forest_dir = os.path.join(train_dir, 'forest')
-train_glacier_dir = os.path.join(train_dir, 'glacier')
-
-batch_size = 16
-img_height = 150
-img_width = 150
-
-ncols = 4
-nrows = 1
-num_images = 4
-
-AUTOTUNE = tf.data.AUTOTUNE
-
-train_ds = (image_dataset_from_directory(train_dir, image_size=(img_height, img_width), batch_size=batch_size,
-                                         label_mode='categorical')
-            .cache()
-            .shuffle(1000)
-            .prefetch(tf.data.AUTOTUNE))
-
-validation_ds = (image_dataset_from_directory(test_dir, image_size=(img_height, img_width), batch_size=batch_size,
-                                              label_mode='categorical')
-                 .cache()
-                 .prefetch(tf.data.AUTOTUNE))
+from keras import models, layers, losses, callbacks
+from helpers import prepare, visualize, build_plot, rescaling
+from config import *
 
 
 def plot_loss_curves(history):
@@ -70,43 +30,38 @@ def plot_loss_curves(history):
     plt.show()
 
 
-# def view_random_image(target_dir):
-#     fig = plt.gcf()
-#     fig.set_size_inches(ncols * 4, nrows * 4)
-#
-#     random_image = random.sample(os.listdir(target_dir), num_images)
-#
-#     for i, img_path in enumerate(random_image):
-#         ax = plt.subplot(nrows, ncols, i + 1)
-#         ax.axis('off')
-#
-#         img = mpimg.imread(os.path.join(target_dir, img_path))
-#         plt.imshow(img)
-#         plt.title(os.path.basename(target_dir))
-#
-#     plt.show()
+if __name__ == "__main__":
+    # build_plot()
 
+    train_ds = prepare(train_ds, shuffle=True, augment=True)
+    validation_ds = prepare(validation_ds)
+    build_plot(train_ds)
+    model = models.Sequential([
+        rescaling,
+        layers.Conv2D(16, 3, activation='relu', padding='same'),
+        layers.MaxPooling2D((2, 2), 2),
+        layers.Conv2D(32, 3, activation='relu', padding='same'),
+        layers.MaxPooling2D((2, 2), 2),
+        layers.Conv2D(64, 3, activation='relu', padding='same'),
+        layers.MaxPooling2D((2, 2), 2),
+        layers.Flatten(),
+        layers.Dense(128, activation='relu'),
+        layers.Dropout(0.2),
+        layers.Dense(6, activation='softmax')
+    ])
+    model.summary()
+    model.compile(optimizer='adam', loss=losses.CategoricalCrossentropy(), metrics=['accuracy'])
 
-model = tf.keras.models.Sequential([
-    tf.keras.layers.Rescaling(1. / 255, input_shape=(img_height, img_width, 3)),
-    tf.keras.layers.Conv2D(16, 3, padding='same', activation='relu'),
-    tf.keras.layers.MaxPooling2D(),
-    tf.keras.layers.Conv2D(32, 3, padding='same', activation='relu'),
-    tf.keras.layers.MaxPooling2D(),
-    tf.keras.layers.Conv2D(64, 3, padding='same', activation='relu'),
-    tf.keras.layers.MaxPooling2D(),
-    tf.keras.layers.Flatten(),
-    tf.keras.layers.Dense(128, activation='relu'),
-    tf.keras.layers.Dropout(0.1),
-    tf.keras.layers.Dense(6, activation='softmax')
-])
-model.summary()
-model.compile(optimizer='adam', loss=tf.keras.losses.CategoricalCrossentropy(from_logits=False),
-              metrics=['accuracy'])
+    early_stopping = callbacks.EarlyStopping(patience=5, monitor='val_loss')
 
-early_stopping = tf.keras.callbacks.EarlyStopping(patience=5, monitor='val_loss')
-
-history = model.fit(train_ds,
-                    validation_data=validation_ds,
-                    epochs=10)
-plot_loss_curves(history)
+    history = model.fit(train_ds,
+                        validation_data=validation_ds,
+                        epochs=30,
+                        callbacks=[early_stopping])
+    model.save("model/cnn.keras")
+    # plot_loss_curves(history)
+    # predictions = model.predict(pred_ds)
+    # print(f"Готово! Отримано {len(predictions)} прогнозів")
+    # predicted_class_indices = np.argmax(predictions, axis=1)
+    # classes = [class_names[i] for i in predicted_class_indices]
+    # print(classes[:10])

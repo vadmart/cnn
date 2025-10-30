@@ -2,3 +2,6 @@ venv-metal
 *.zip
 .DS_Store
 .idea/
+model/
+.venv/
+__pycache__
