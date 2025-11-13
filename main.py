@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from keras import models, layers, losses, callbacks
-from helpers import prepare, visualize, build_plot, rescaling
+from helpers import prepare, visualize, show_images_from_ds_with_labels, rescaling
 from config import *
 
 
@@ -35,14 +35,14 @@ if __name__ == "__main__":
 
     train_ds = prepare(train_ds, shuffle=True, augment=True)
     validation_ds = prepare(validation_ds)
-    build_plot(train_ds)
+    show_images_from_ds_with_labels(train_ds)
     model = models.Sequential([
         rescaling,
-        layers.Conv2D(16, 3, activation='relu', padding='same'),
+        layers.Conv2D(32, 3, activation='relu'),
         layers.MaxPooling2D((2, 2), 2),
-        layers.Conv2D(32, 3, activation='relu', padding='same'),
+        layers.Conv2D(64, 3, activation='relu'),
         layers.MaxPooling2D((2, 2), 2),
-        layers.Conv2D(64, 3, activation='relu', padding='same'),
+        layers.Conv2D(128, 3, activation='relu'),
         layers.MaxPooling2D((2, 2), 2),
         layers.Flatten(),
         layers.Dense(128, activation='relu'),

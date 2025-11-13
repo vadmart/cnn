@@ -47,11 +47,22 @@ def prepare(ds, shuffle=False, augment=False):
     return ds.prefetch(buffer_size=AUTOTUNE)
 
 
-def build_plot(ds):
+def show_images_from_ds(ds, labels=None):
     plt.figure(figsize=(10, 10))
-    for images, labels in ds.take(1):
+    for images in ds.take(1):
         for i in range(9):
             ax = plt.subplot(3, 3, i + 1)
+            plt.imshow(images[i].numpy().astype("uint8"))
+            plt.title(labels[i])
+            plt.axis("off")
+    plt.show()
+
+
+def show_images_from_ds_with_labels(ds):
+    plt.figure(figsize=(10, 10))
+    for images, labels in ds.take(1):
+        for i in range(12):
+            ax = plt.subplot(3, 4, i + 1)
             plt.imshow(images[i].numpy().astype("uint8"))
             plt.title(class_names[np.argmax(labels[i])])
             plt.axis("off")

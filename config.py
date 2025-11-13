@@ -26,7 +26,7 @@ validation_ds = image_dataset_from_directory(test_dir, image_size=(img_height, i
 
 pred_ds = image_dataset_from_directory(pred_dir,
                                        image_size=(img_height, img_width),
-                                       shuffle=False,
-                                       labels=None)
+                                       labels=None,
+                                       shuffle=False)
 
 class_names = train_ds.class_names
